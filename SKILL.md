@@ -2,9 +2,9 @@
 name: fund-advisor
 description: 基金投资顾问技能。提供个人持仓管理功能，并整合盈米且慢MCP服务，提供基金数据查询、投资组合分析、市场分析等服务。当用户询问基金投资、基金信息查询、财经信息查询、持仓分析等基金投资相关问题时激活此技能。
 homepage: https://github.com/realqiyan/fund-advisor
-metadata: {"clawdbot":{"emoji":"💰","requires":{"bins":["node","python","pip"],"env":["QIEMAN_API_KEY"]}}}
+metadata: {"clawdbot":{"emoji":"💰","requires":{"bins":["mcporter","python","pip"],"env":["QIEMAN_API_KEY"]}}}
 compatibility: 需要 mcporter CLI 和 qieman-mcp MCP 服务配置
-allowed-tools: Bash(mcporter:*) Bash(python:*) Bash(bash*) Read(*.csv) Write(*.csv) Read(*.md) Write(*.md)
+allowed-tools: Bash(mcporter:*) Bash(python:*) Bash(bash*) Read(*.csv) Read(*.md)
 ---
 
 # 基金顾投 Skill (fund-advisor)
@@ -13,7 +13,7 @@ allowed-tools: Bash(mcporter:*) Bash(python:*) Bash(bash*) Read(*.csv) Write(*.c
 
 ## 能力范围
 
-1. 用户个平台基金持仓统分析管理。
+1. 管理用户的基金持仓数据，用户导入数据时会创建 `./fund_portfolio.db` 数据文件，用于存储用户导入的数据，后续进行持仓数据分析。
 
 2. 本技能整合且慢MCP的五大核心能力模块：
 
@@ -31,7 +31,7 @@ allowed-tools: Bash(mcporter:*) Bash(python:*) Bash(bash*) Read(*.csv) Write(*.c
 
 ### 1. 持仓管理
 
-管理用户的基金持仓数据：
+导入用户的持仓数据，后续进行数据分析使用。
 
 ```bash
 # 初始化环境（检查 mcporter 和 qieman-mcp 配置）
@@ -43,7 +43,7 @@ scripts/fund-cli.sh holdings
 # 查看投资组合总览
 scripts/fund-cli.sh overview
 
-# 导入 CSV 持仓文件
+# 导入 CSV 持仓文件 导入的数据会保持于 `./fund_portfolio.db` 数据文件中
 scripts/fund-cli.sh import-csv tools/data/holdings.csv
 
 # 同步所有数据到本地（基础信息 + 持仓详情）
