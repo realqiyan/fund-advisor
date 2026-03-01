@@ -1,31 +1,21 @@
 ---
 name: fund-advisor
-description: |
-  基金投资顾问工具。整合盈米且慢MCP服务，提供基金数据查询、持仓管理、投资组合分析、市场分析等服务。当用户询问基金投资、基金信息查询、财经信息查询、持仓分析等相关问题时激活此技能。
-  
-  核心能力包括：
-  - 基金信息查询（净值、业绩、持仓、经理等）
-  - 投资组合诊断与优化建议
-  - 基金筛选与对比分析
-  - 持仓管理与数据导入导出
-  
-  
-license: MIT
+description: 基金投资顾问技能。提供个人持仓管理功能，并整合盈米且慢MCP服务，提供基金数据查询、投资组合分析、市场分析等服务。当用户询问基金投资、基金信息查询、财经信息查询、持仓分析等基金投资相关问题时激活此技能。
+homepage: https://github.com/realqiyan/fund-advisor
+metadata: {"clawdbot":{"emoji":"💰","requires":{"bins":["node","python","pip"],"env":["QIEMAN_API_KEY"]}}}
 compatibility: 需要 mcporter CLI 和 qieman-mcp MCP 服务配置
-metadata:
-  author: fund-tools
-  version: "1.0.0"
-  mcp_servers: qieman-mcp
 allowed-tools: Bash(mcporter:*) Bash(python:*) Bash(bash*) Read(*.csv) Write(*.csv) Read(*.md) Write(*.md)
 ---
 
 # 基金顾投 Skill (fund-advisor)
 
-整合盈米且慢MCP服务与用户基金持仓管理功能，提供专业的基金投资咨询服务。
+基金投资顾问技能。提供个人持仓管理功能，并整合盈米且慢MCP服务，提供基金数据查询、投资组合分析、市场分析等服务。
 
 ## 能力范围
 
-本技能整合且慢MCP的五大核心能力模块：
+1. 用户个平台基金持仓统分析管理。
+
+2. 本技能整合且慢MCP的五大核心能力模块：
 
 | 模块 | 能力说明 |
 |------|----------|
@@ -285,7 +275,22 @@ mcporter call qieman-mcp.RenderHtmlToPdf \
 
 ## 环境配置
 
-### 1. 安装 mcporter
+### 1. 配置环境变量
+
+设置 `QIEMAN_API_KEY` 环境变量：
+
+```bash
+# 临时设置（当前终端会话）
+export QIEMAN_API_KEY="your-api-key-here"
+
+# 永久设置（添加到 shell 配置文件）
+echo 'export QIEMAN_API_KEY="your-api-key-here"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+获取 API Key：访问 [且慢MCP官网](https://qieman.com/mcp/account) 申请免费 API Key。
+
+### 2. 安装 mcporter
 
 ```bash
 # NPM
@@ -296,24 +301,18 @@ brew tap steipete/tap
 brew install mcporter
 ```
 
-### 2. 配置 qieman-mcp
+### 3. 初始化环境
 
-编辑 `~/.mcporter/mcporter.json`：
-
-```json
-{
-  "mcpServers": {
-    "qieman-mcp": {
-      "baseUrl": "https://stargate.yingmi.com/mcp/sse?apiKey=YOUR_API_KEY",
-      "description": "基金投资工具包"
-    }
-  }
-}
+```bash
+# 检查并初始化环境（会自动使用环境变量中的 API Key 配置 qieman-mcp）
+scripts/fund-cli.sh init
 ```
 
-### 3. 获取 API Key
-
-访问 [且慢MCP官网](https://qieman.com/mcp/account) 申请免费 API Key。
+初始化脚本会：
+1. 检查 mcporter 是否已安装
+2. 检查 `QIEMAN_API_KEY` 环境变量是否已配置
+3. 自动生成 `~/.mcporter/mcporter.json` 配置文件
+4. 测试 MCP 服务连接
 
 ## 参考文档
 

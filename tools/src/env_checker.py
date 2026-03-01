@@ -2,6 +2,7 @@
 基金持仓管理系统 - 环境检查和初始化
 """
 import json
+import os
 import subprocess
 import shutil
 from pathlib import Path
@@ -13,12 +14,24 @@ class EnvChecker:
 
     MCPORTER_CONFIG_PATH = Path.home() / ".mcporter" / "mcporter.json"
     REQUIRED_MCP_SERVER = "qieman-mcp"
+    ENV_API_KEY = "QIEMAN_API_KEY"
 
-    # 默认的qieman-mcp配置模板（apiKey需要用户自行配置）
-    DEFAULT_QIEMAN_MCP_CONFIG = {
-        "baseUrl": "https://stargate.yingmi.com/mcp/sse?apiKey=YOUR_API_KEY_HERE",
-        "description": "基金投资工具包，提供基金、内容、投研、投顾等专业领域能力。"
-    }
+    def get_api_key(self) -> Optional[str]:
+        """从环境变量获取 API Key"""
+        return os.environ.get(self.ENV_API_KEY)
+
+    def get_qieman_mcp_config(self) -> Dict[str, str]:
+        """获取 qieman-mcp 配置，优先使用环境变量中的 API Key"""
+        api_key = self.get_api_key()
+        if api_key:
+            return {
+                "baseUrl": f"https://stargate.yingmi.com/mcp/sse?apiKey={api_key}",
+                "description": "基金投资工具包，提供基金、内容、投研、投顾等专业领域能力。"
+            }
+        return {
+            "baseUrl": "https://stargate.yingmi.com/mcp/sse?apiKey=YOUR_API_KEY_HERE",
+            "description": "基金投资工具包，提供基金、内容、投研、投顾等专业领域能力。"
+        }
 
     def __init__(self):
         self.results: Dict[str, Any] = {}
@@ -54,6 +67,13 @@ class EnvChecker:
             self.results["config_error"] = str(e)
             return False
 
+    def check_api_key_configured(self) -> bool:
+        """检查环境变量中的 API Key 是否已配置"""
+        api_key = self.get_api_key()
+        result = api_key is not None and len(api_key) > 0 and api_key != "YOUR_API_KEY_HERE"
+        self.results["api_key_configured"] = result
+        return result
+
     def setup_qieman_mcp_config(self, force: bool = False) -> bool:
         """
         配置qieman-mcp服务器
@@ -86,7 +106,7 @@ class EnvChecker:
         if "mcpServers" not in config:
             config["mcpServers"] = {}
 
-        config["mcpServers"][self.REQUIRED_MCP_SERVER] = self.DEFAULT_QIEMAN_MCP_CONFIG
+        config["mcpServers"][self.REQUIRED_MCP_SERVER] = self.get_qieman_mcp_config()
 
         # 保存配置
         try:
@@ -148,10 +168,21 @@ class EnvChecker:
         # 2. 检查配置文件
         self.check_mcporter_config_exists()
 
-        # 3. 检查并配置qieman-mcp
-        self.setup_qieman_mcp_config(force)
+        # 3. 检查qieman-mcp是否已配置
+        qieman_configured = self.check_qieman_mcp_configured()
 
-        # 4. 测试连接
+        # 4. 如果未配置，检查 API Key 环境变量
+        if not qieman_configured:
+            api_key_ok = self.check_api_key_configured()
+            if not api_key_ok:
+                self.results["status"] = "error"
+                self.results["message"] = f"环境变量 {self.ENV_API_KEY} 未配置，请设置 API Key"
+                return self.results
+
+            # 5. 配置qieman-mcp
+            self.setup_qieman_mcp_config(force)
+
+        # 6. 测试连接
         connection_ok = self.test_mcp_connection()
 
         # 生成状态报告
@@ -174,12 +205,14 @@ class EnvChecker:
         self.results = {}
 
         self.check_mcporter_installed()
+        self.check_api_key_configured()
         self.check_mcporter_config_exists()
         self.check_qieman_mcp_configured()
 
         # 汇总状态
         all_ok = (
             self.results.get("mcporter_installed", False) and
+            self.results.get("api_key_configured", False) and
             self.results.get("qieman_mcp_configured", False)
         )
 
@@ -198,6 +231,10 @@ class EnvChecker:
         # mcporter安装状态
         status = "✓" if self.results.get("mcporter_installed") else "✗"
         lines.append(f"[{status}] mcporter安装")
+
+        # API Key 环境变量状态
+        status = "✓" if self.results.get("api_key_configured") else "✗"
+        lines.append(f"[{status}] {self.ENV_API_KEY} 环境变量")
 
         # 配置文件状态
         status = "✓" if self.results.get("config_exists") else "✗"
