@@ -128,7 +128,7 @@ python main.py sync --all
 
 ### 数据导入
 
-CSV 数据文件来源于 [基金E账户](https://www.fundaccount.com.cn/) APP。基金E账户是中国结算提供的官方基金账户查询平台，可以查询用户在所有基金销售平台的持仓信息。
+CSV 数据文件来源于 [基金E账户](https://fundaccount.chinaclear.cn/fund-file/H5/downloadpage/efund_pc.html) APP。基金E账户是中国结算提供的官方基金账户查询平台，可以查询用户在所有基金销售平台的持仓信息。
 
 #### 获取 CSV 文件
 
