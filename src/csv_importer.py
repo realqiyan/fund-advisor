@@ -52,6 +52,49 @@ class CSVImporter:
                 normalized_row[normalized_key] = value
             yield normalized_row
 
+    def _find_header_row(self, lines: List[str]) -> int:
+        """
+        查找包含列标题的行号
+
+        Args:
+            lines: 文件所有行
+
+        Returns:
+            列标题所在行号（0-based），未找到返回-1
+        """
+        header_keywords = ["基金代码", "基金名称", "基金账户"]
+        for i, line in enumerate(lines):
+            match_count = sum(1 for kw in header_keywords if kw in line)
+            if match_count >= 2:
+                return i
+        return -1
+
+    def _is_data_row(self, row: dict) -> bool:
+        """
+        判断是否为有效数据行
+
+        Args:
+            row: CSV行数据
+
+        Returns:
+            是否为有效数据行
+        """
+        if not row:
+            return False
+
+        fund_code = row.get("基金代码", "").strip()
+        if not fund_code:
+            return False
+
+        if fund_code in ["序号", "总记录数", "数据来源", "说明", "数量单位", "免责声明"]:
+            return False
+
+        try:
+            float(fund_code)
+            return True
+        except ValueError:
+            return fund_code and not fund_code.startswith("总记录数")
+
     def import_from_csv(self, csv_path: str, encoding: str = "utf-8") -> Tuple[int, int, List[str]]:
         """
         从CSV文件导入基金持有信息
@@ -71,43 +114,49 @@ class CSVImporter:
         if not csv_file.exists():
             return 0, 0, [f"文件不存在: {csv_path}"]
 
-        # 尝试多种编码
         encodings = [encoding, "utf-8-sig", "gbk", "gb18030"]
+        detected_encoding = None
+        header_row_idx = -1
+        all_lines = []
 
         for enc in encodings:
             try:
                 with open(csv_file, "r", encoding=enc) as f:
-                    # 读取第一行检测编码
-                    first_line = f.readline()
-                    f.seek(0)
-
-                    reader = csv.DictReader(f)
-                    rows = list(reader)
-
-                    if rows:
-                        encoding = enc
+                    all_lines = f.readlines()
+                    header_row_idx = self._find_header_row(all_lines)
+                    if header_row_idx >= 0:
+                        detected_encoding = enc
                         break
             except UnicodeDecodeError:
                 continue
-        else:
-            return 0, 0, [f"无法识别文件编码: {csv_path}"]
 
-        # 导入数据
+        if detected_encoding is None:
+            return 0, 0, [f"无法识别文件编码或找不到有效的列标题: {csv_path}"]
+
         try:
-            with open(csv_file, "r", encoding=encoding) as f:
-                reader = csv.DictReader(f)
-                # 标准化列名：移除换行符和多余空格
-                normalized_reader = self._normalize_reader(reader)
+            header_line = all_lines[header_row_idx]
+            data_lines = all_lines[header_row_idx + 1:]
 
-                for row_num, row in enumerate(normalized_reader, start=2):  # 从第2行开始（第1行是标题）
-                    try:
-                        holding = self._parse_row(row, row_num)
-                        if holding:
-                            self.database.upsert_fund_holding(holding)
-                            success_count += 1
-                    except Exception as e:
-                        fail_count += 1
-                        errors.append(f"第{row_num}行: {str(e)}")
+            reader = csv.DictReader([header_line] + data_lines)
+            normalized_reader = self._normalize_reader(reader)
+
+            actual_row_num = header_row_idx + 2
+
+            for row in normalized_reader:
+                if not self._is_data_row(row):
+                    actual_row_num += 1
+                    continue
+
+                try:
+                    holding = self._parse_row(row, actual_row_num)
+                    if holding:
+                        self.database.upsert_fund_holding(holding)
+                        success_count += 1
+                except Exception as e:
+                    fail_count += 1
+                    errors.append(f"第{actual_row_num}行: {str(e)}")
+
+                actual_row_num += 1
         except Exception as e:
             return 0, 0, [f"读取文件失败: {str(e)}"]
 
