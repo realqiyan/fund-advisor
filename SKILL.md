@@ -1,17 +1,15 @@
 ---
 name: fund-advisor
 description: |
-  基金投资全流程顾问工具。整合盈米且慢MCP服务，提供基金数据查询、持仓管理、投资组合分析、财务规划、市场分析等专业金融服务。
+  基金投资顾问工具。整合盈米且慢MCP服务，提供基金数据查询、持仓管理、投资组合分析、市场分析等服务。当用户询问基金投资、基金信息查询、财经信息查询、持仓分析等相关问题时激活此技能。
   
   核心能力包括：
   - 基金信息查询（净值、业绩、持仓、经理等）
   - 投资组合诊断与优化建议
-  - 资产配置方案规划
-  - 家庭财务健康分析
   - 基金筛选与对比分析
   - 持仓管理与数据导入导出
   
-  当用户询问基金投资、资产配置、财务规划、持仓分析等相关问题时激活此技能。
+  
 license: MIT
 compatibility: 需要 mcporter CLI 和 qieman-mcp MCP 服务配置
 metadata:
@@ -23,17 +21,7 @@ allowed-tools: Bash(mcporter:*) Bash(python:*) Bash(bash*) Read(*.csv) Write(*.c
 
 # 基金顾投 Skill (fund-advisor)
 
-整合盈米且慢MCP服务与本地持仓管理功能，提供专业的基金投资咨询服务。
-
-## 触发场景
-
-当用户需要：
-- 查询基金信息（净值、业绩、持仓、经理等）
-- 诊断分析投资组合
-- 制定资产配置方案
-- 进行家庭财务规划
-- 筛选和对比基金产品
-- 管理和导入持仓数据
+整合盈米且慢MCP服务与用户基金持仓管理功能，提供专业的基金投资咨询服务。
 
 ## 能力范围
 
@@ -51,22 +39,7 @@ allowed-tools: Bash(mcporter:*) Bash(python:*) Bash(bash*) Read(*.csv) Write(*.c
 
 ## 核心功能
 
-### 1. 基金投资咨询
-
-直接通过 MCP 服务查询任意基金信息，无需本地数据库：
-
-```bash
-# 查询单只基金详情
-mcporter call qieman-mcp.BatchGetFundsDetail --args '{"fundCodes":["004137"]}' --output json
-
-# 批量查询多只基金
-mcporter call qieman-mcp.BatchGetFundsDetail --args '{"fundCodes":["004137","000001","110022"]}' --output json
-
-# 查询基金持仓明细
-mcporter call qieman-mcp.BatchGetFundsHolding --args '{"fundCodes":["004137"]}' --output json
-```
-
-### 2. 持仓管理
+### 1. 持仓管理
 
 管理用户的基金持仓数据：
 
@@ -74,32 +47,26 @@ mcporter call qieman-mcp.BatchGetFundsHolding --args '{"fundCodes":["004137"]}' 
 # 初始化环境（检查 mcporter 和 qieman-mcp 配置）
 scripts/fund-cli.sh init
 
-# 导入 CSV 持仓文件
-scripts/fund-cli.sh import-csv tools/data/holdings.csv
-
 # 查看持仓列表
 scripts/fund-cli.sh holdings
 
 # 查看投资组合总览
 scripts/fund-cli.sh overview
-```
 
-### 3. 数据同步
+# 导入 CSV 持仓文件
+scripts/fund-cli.sh import-csv tools/data/holdings.csv
 
-从 MCP 服务同步基金数据到本地数据库：
-
-```bash
-# 同步所有数据（基础信息 + 持仓详情）
+# 同步所有数据到本地（基础信息 + 持仓详情）
 scripts/fund-cli.sh sync --all
 
-# 仅同步基金基础信息
+# 仅同步基金基础信息数据到本地
 scripts/fund-cli.sh sync --info
 
-# 仅同步基金持仓详情
+# 仅同步基金持仓详情数据到本地
 scripts/fund-cli.sh sync --detail
 ```
 
-### 4. 持仓分析
+### 2. 持仓分析
 
 ```bash
 # 查看基金详情
@@ -116,6 +83,22 @@ scripts/fund-cli.sh stats
 
 # 导出统计报告
 scripts/fund-cli.sh export --output report.txt
+```
+
+
+### 3. 基金投资咨询
+
+直接通过 MCP 服务查询任意基金信息，无需本地数据库：
+
+```bash
+# 查询单只基金详情
+mcporter call qieman-mcp.BatchGetFundsDetail --args '{"fundCodes":["004137"]}' --output json
+
+# 批量查询多只基金
+mcporter call qieman-mcp.BatchGetFundsDetail --args '{"fundCodes":["004137","000001","110022"]}' --output json
+
+# 查询基金持仓明细
+mcporter call qieman-mcp.BatchGetFundsHolding --args '{"fundCodes":["004137"]}' --output json
 ```
 
 ## MCP 工具整合
@@ -145,36 +128,12 @@ scripts/fund-cli.sh export --output report.txt
 
 ## 数据模型
 
-### FundHolding - 用户持仓
-
-| 字段 | 说明 |
-|------|------|
-| fund_code | 基金代码 |
-| fund_name | 基金名称 |
-| holding_shares | 持有份额 |
-| nav | 净值 |
-| asset_value | 资产市值 |
-
-### FundInfo - 基金信息
-
-| 字段 | 说明 |
-|------|------|
-| fund_code | 基金代码 |
-| fund_name | 基金名称 |
-| fund_invest_type | 投资类型 |
-| risk_5_level | 风险等级(1-5) |
-| net_asset | 基金规模(亿) |
-| manager_names | 基金经理 |
+- FundHolding - 用户持仓
+- FundInfo - 基金信息
 
 详见 [references/reference.md](references/reference.md)
 
 ## CSV 导入格式
-
-支持中文列名，必需字段：
-
-- 基金代码, 基金名称, 基金账户, 交易账户
-- 持有份额, 份额日期, 基金净值, 净值日期
-- 资产情况（结算币种）
 
 示例文件见 [assets/sample.csv](assets/sample.csv)
 
@@ -266,28 +225,7 @@ mcporter call qieman-mcp.MonteCarloSimulate \
   --output json
 ```
 
-### 场景3：家庭财务分析
-
-用户需要进行财务规划：
-
-```bash
-# 1. 家庭成员分析
-mcporter call qieman-mcp.AnalyzeFamilyMembers \
-  --args '{"members":[{"role":"本人","age":30},{"role":"配偶","age":28},{"role":"子女","age":5}]}' \
-  --output json
-
-# 2. 资产负债分析
-mcporter call qieman-mcp.AnalyzeAssetLiability \
-  --args '{"totalAsset":5000000,"totalLiability":2000000}' \
-  --output json
-
-# 3. 现金流分析
-mcporter call qieman-mcp.AnalyzeCashFlow \
-  --args '{"currentAsset":500000,"expectedReturn":0.08}' \
-  --output json
-```
-
-### 场景4：基金筛选与对比
+### 场景3：基金筛选与对比
 
 用户希望筛选符合特定条件的基金：
 
@@ -308,7 +246,7 @@ mcporter call qieman-mcp.GetFundDiagnosis \
   --output json
 ```
 
-### 场景5：市场分析
+### 场景4：市场分析
 
 用户希望了解市场情况：
 
