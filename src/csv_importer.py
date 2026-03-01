@@ -2,7 +2,7 @@
 基金持仓管理系统 - CSV导入功能
 """
 import csv
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -26,13 +26,31 @@ class CSVImporter:
         "份额日期": "share_date",
         "基金净值": "nav",
         "净值日期": "nav_date",
-        "资产情况 （结算币种）": "asset_value",
+        "资产情况（结算币种）": "asset_value",  # 注意：实际CSV可能有换行符
         "结算币种": "settlement_currency",
         "分红方式": "dividend_method"
     }
 
+    # 列名别名映射（处理换行符、空格等变体）
+    COLUMN_ALIASES = {
+        "asset_value": ["资产情况（结算币种）", "资产情况\n（结算币种）", "资产情况 （结算币种）"]
+    }
+
     def __init__(self, database: Database):
         self.database = database
+
+    def _normalize_reader(self, reader: csv.DictReader):
+        """标准化CSV读取器，处理列名中的换行符和多余空格"""
+        for row in reader:
+            normalized_row = {}
+            for key, value in row.items():
+                # 标准化列名：移除换行符，压缩多个空格为单个空格
+                normalized_key = key.replace("\n", "").replace("\r", "").strip()
+                # 处理特殊情况："资产情况（结算币种）"中间可能有空格
+                if "资产情况" in normalized_key and "结算币种" in normalized_key:
+                    normalized_key = "资产情况（结算币种）"
+                normalized_row[normalized_key] = value
+            yield normalized_row
 
     def import_from_csv(self, csv_path: str, encoding: str = "utf-8") -> Tuple[int, int, List[str]]:
         """
@@ -78,8 +96,10 @@ class CSVImporter:
         try:
             with open(csv_file, "r", encoding=encoding) as f:
                 reader = csv.DictReader(f)
+                # 标准化列名：移除换行符和多余空格
+                normalized_reader = self._normalize_reader(reader)
 
-                for row_num, row in enumerate(reader, start=2):  # 从第2行开始（第1行是标题）
+                for row_num, row in enumerate(normalized_reader, start=2):  # 从第2行开始（第1行是标题）
                     try:
                         holding = self._parse_row(row, row_num)
                         if holding:
@@ -106,6 +126,22 @@ class CSVImporter:
                         value = row.get(key, "").strip()
                         break
             mapped_row[model_col] = value
+
+        # 处理列名别名（如包含换行符的列名）
+        for model_col, aliases in self.COLUMN_ALIASES.items():
+            if not mapped_row.get(model_col):
+                for alias in aliases:
+                    # 直接匹配
+                    if alias in row:
+                        mapped_row[model_col] = row[alias].strip()
+                        break
+                    # 清理换行符后匹配
+                    for key in row.keys():
+                        cleaned_key = key.replace("\n", "").replace("\r", "")
+                        cleaned_alias = alias.replace("\n", "").replace("\r", "")
+                        if cleaned_key == cleaned_alias:
+                            mapped_row[model_col] = row[key].strip()
+                            break
 
         # 验证必填字段
         required_fields = ["fund_code", "fund_name", "fund_account", "trade_account",
@@ -175,7 +211,7 @@ class CSVImporter:
 
         for fmt in formats:
             try:
-                return date.strptime(date_str, fmt)
+                return datetime.strptime(date_str, fmt).date()
             except ValueError:
                 continue
 
