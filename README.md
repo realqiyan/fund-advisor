@@ -6,7 +6,7 @@
 
 - **CSV 导入**：从 CSV 文件导入基金持仓数据
 - **MCP 数据同步**：通过 qieman-mcp 服务同步基金基础信息和持仓详情
-- **统计分析**：支持多种维度统计分析（投资类型、管理人、销售机构、币种等）
+- **统计分析**：支持多种维度统计分析（投资类型、管理人、销售机构等）
 - **丰富的 CLI 命令**：查看持仓、基金详情、投资组合总览等
 
 ## 安装
@@ -169,9 +169,6 @@ python main.py detail <基金代码>
 
 # 查看投资组合总览
 python main.py overview
-
-# 查看基金账户列表
-python main.py accounts
 ```
 
 ### 数据同步
@@ -196,9 +193,6 @@ python main.py stats
 # 投资类型分布
 python main.py invest-type
 
-# 币种分布
-python main.py currency
-
 # 基金管理人分布
 python main.py managers
 
@@ -207,26 +201,6 @@ python main.py agencies
 
 # 导出统计报告
 python main.py export --output report.txt
-```
-
-### 持仓管理
-
-```bash
-# 手动添加持仓记录
-python main.py add \
-  --fund-code <基金代码> \
-  --fund-name <基金名称> \
-  --fund-account <基金账户> \
-  --trade-account <交易账户> \
-  --shares <持有份额> \
-  --nav <净值> \
-  --asset-value <资产价值>
-
-# 删除持仓记录
-python main.py delete \
-  --fund-account <基金账户> \
-  --trade-account <交易账户> \
-  --fund-code <基金代码>
 ```
 
 ## 项目结构

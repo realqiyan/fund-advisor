@@ -124,15 +124,6 @@ def overview(ctx):
 
 
 @cli.command()
-@click.pass_context
-def currency(ctx):
-    """显示币种分布"""
-    database = ctx.obj["database"]
-    stats = Statistics(database)
-    stats.show_currency_distribution()
-
-
-@cli.command()
 @click.option("--limit", default=10, help="显示数量")
 @click.pass_context
 def managers(ctx, limit):
@@ -159,15 +150,6 @@ def invest_type(ctx):
     database = ctx.obj["database"]
     stats = Statistics(database)
     stats.show_invest_type_distribution()
-
-
-@cli.command()
-@click.pass_context
-def accounts(ctx):
-    """显示基金账户列表"""
-    database = ctx.obj["database"]
-    stats = Statistics(database)
-    stats.show_fund_accounts()
 
 
 # ==================== 数据同步命令 ====================
@@ -246,62 +228,6 @@ def export(ctx, output):
     database = ctx.obj["database"]
     stats = Statistics(database)
     stats.export_report(output)
-
-
-# ==================== 持仓记录管理命令 ====================
-
-@cli.command()
-@click.option("--fund-code", required=True, help="基金代码")
-@click.option("--fund-name", required=True, help="基金名称")
-@click.option("--fund-account", required=True, help="基金账户")
-@click.option("--trade-account", required=True, help="交易账户")
-@click.option("--shares", required=True, type=float, help="持有份额")
-@click.option("--nav", required=True, type=float, help="基金净值")
-@click.option("--asset-value", required=True, type=float, help="资产价值")
-@click.pass_context
-def add(ctx, fund_code, fund_name, fund_account, trade_account, shares, nav, asset_value):
-    """手动添加持仓记录"""
-    from datetime import date
-    from src.models import FundHolding, FundType
-
-    database = ctx.obj["database"]
-
-    holding = FundHolding(
-        fund_code=fund_code,
-        fund_name=fund_name,
-        fund_account=fund_account,
-        trade_account=trade_account,
-        holding_shares=shares,
-        nav=nav,
-        asset_value=asset_value,
-        share_date=date.today(),
-        nav_date=date.today(),
-        share_class="",
-        fund_manager="",
-        sales_agency="",
-        settlement_currency="人民币",
-        dividend_method="红利转投",
-        fund_type=FundType.PUBLIC_FUND
-    )
-
-    database.upsert_fund_holding(holding)
-    console.print(f"[green]成功添加/更新持仓: {fund_code}[/]")
-
-
-@cli.command()
-@click.option("--fund-account", required=True, help="基金账户")
-@click.option("--trade-account", required=True, help="交易账户")
-@click.option("--fund-code", required=True, help="基金代码")
-@click.pass_context
-def delete(ctx, fund_account, trade_account, fund_code):
-    """删除持仓记录"""
-    database = ctx.obj["database"]
-
-    if Confirm.ask(f"确认删除 {fund_code} 的持仓记录?"):
-        if database.delete_fund_holding(fund_account, trade_account, fund_code):
-            console.print(f"[green]已删除: {fund_code}[/]")
-        else:
-            console.print(f"[red]删除失败: 未找到记录[/]")
 
 
 if __name__ == "__main__":

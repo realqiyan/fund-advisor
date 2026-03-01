@@ -186,17 +186,6 @@ class Database:
             row = cursor.fetchone()
             return self._row_to_fund_holding(row) if row else None
 
-    def delete_fund_holding(self, fund_account: str, trade_account: str, fund_code: str) -> bool:
-        """删除基金持有记录"""
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                DELETE FROM fund_holdings
-                WHERE fund_account = ? AND trade_account = ? AND fund_code = ?
-            """, (fund_account, trade_account, fund_code))
-            conn.commit()
-            return cursor.rowcount > 0
-
     def clear_all_holdings(self) -> int:
         """清空所有持仓记录，返回删除的数量"""
         with self._get_connection() as conn:
@@ -433,17 +422,6 @@ class Database:
             """)
             holding_count = cursor.fetchone()['count']
 
-            # 币种分布
-            cursor.execute("""
-                SELECT settlement_currency, SUM(asset_value) as total
-                FROM fund_holdings
-                GROUP BY settlement_currency
-            """)
-            currency_distribution = {
-                row['settlement_currency']: row['total']
-                for row in cursor.fetchall()
-            }
-
             # 基金管理人分布
             cursor.execute("""
                 SELECT fund_manager, COUNT(*) as count, SUM(asset_value) as total
@@ -467,12 +445,6 @@ class Database:
                 row['sales_agency']: {'count': row['count'], 'total': row['total']}
                 for row in cursor.fetchall()
             }
-
-            # 基金账户列表
-            cursor.execute("""
-                SELECT DISTINCT fund_account FROM fund_holdings
-            """)
-            fund_accounts = [row['fund_account'] for row in cursor.fetchall()]
 
             # 获取已有基础信息的基金代码
             cursor.execute("""
@@ -506,11 +478,9 @@ class Database:
                 'total_asset_value': total_asset,
                 'fund_count': fund_count,
                 'holding_count': holding_count,
-                'currency_distribution': currency_distribution,
                 'manager_distribution': manager_distribution,
                 'sales_agency_distribution': sales_agency_distribution,
                 'invest_type_distribution': invest_type_distribution,
-                'fund_accounts': fund_accounts,
                 'info_count': info_count,
                 'detail_count': detail_count
             }

@@ -36,27 +36,6 @@ class Statistics:
 """
         self.console.print(Panel(overview_text, title="[bold green]投资组合总览[/]", border_style="green"))
 
-    def show_currency_distribution(self):
-        """显示币种分布"""
-        stats = self.database.get_statistics()
-        currency_dist = stats['currency_distribution']
-
-        if not currency_dist:
-            self.console.print("[yellow]暂无币种分布数据[/]")
-            return
-
-        table = Table(title="币种分布", show_header=True, header_style="bold cyan")
-        table.add_column("币种", style="cyan")
-        table.add_column("资产价值", justify="right", style="green")
-        table.add_column("占比", justify="right", style="yellow")
-
-        total = sum(currency_dist.values())
-        for currency, value in sorted(currency_dist.items(), key=lambda x: x[1], reverse=True):
-            percentage = (value / total * 100) if total > 0 else 0
-            table.add_row(currency or "未知", f"¥{value:,.2f}", f"{percentage:.2f}%")
-
-        self.console.print(table)
-
     def show_manager_distribution(self, limit: int = 10):
         """显示基金管理人分布"""
         stats = self.database.get_statistics()
@@ -276,24 +255,6 @@ class Statistics:
 
                 self.console.print(bond_table)
 
-    def show_fund_accounts(self):
-        """显示基金账户列表"""
-        stats = self.database.get_statistics()
-        accounts = stats['fund_accounts']
-
-        if not accounts:
-            self.console.print("[yellow]暂无基金账户数据[/]")
-            return
-
-        table = Table(title="基金账户列表", show_header=True, header_style="bold cyan")
-        table.add_column("序号", style="cyan", width=6)
-        table.add_column("基金账户", style="green")
-
-        for i, account in enumerate(accounts, 1):
-            table.add_row(str(i), account)
-
-        self.console.print(table)
-
     def export_report(self, output_path: str = "report.txt"):
         """导出统计报告"""
         stats = self.database.get_statistics()
@@ -336,8 +297,6 @@ class Statistics:
         """显示所有统计视图"""
         self.console.print("\n" + "=" * 60 + "\n")
         self.show_overview()
-        self.console.print("\n")
-        self.show_currency_distribution()
         self.console.print("\n")
         self.show_invest_type_distribution()
         self.console.print("\n")
