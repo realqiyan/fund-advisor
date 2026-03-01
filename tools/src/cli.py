@@ -3,18 +3,17 @@
 基金持仓管理系统 - CLI主程序
 """
 import sys
-from pathlib import Path
 from typing import Optional
 
 import click
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
-from src.database import Database
-from src.csv_importer import CSVImporter
-from src.mcp_service import MCPService
-from src.statistics import Statistics
-from src.env_checker import EnvChecker
+from .database import Database
+from .csv_importer import CSVImporter
+from .mcp_service import MCPService
+from .statistics import Statistics
+from .env_checker import EnvChecker
 
 
 console = Console()
@@ -228,7 +227,3 @@ def export(ctx, output):
     database = ctx.obj["database"]
     stats = Statistics(database)
     stats.export_report(output)
-
-
-if __name__ == "__main__":
-    cli(obj={})

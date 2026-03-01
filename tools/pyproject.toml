@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-fund-tools = "main:cli"
+fund-tools = "src.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]

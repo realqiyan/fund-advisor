@@ -52,6 +52,10 @@ coverage.xml
 
 # SQLite database
 *.db
+!tools/data/*.db
+
+# User data
+tools/fund_portfolio.db
 
 # Virtual environments
 .env
@@ -69,5 +73,5 @@ venv.bak/
 *.swo
 
 # Data files
-data/*.csv
-!data/sample.csv
+tools/data/*.csv
+!tools/data/sample.csv

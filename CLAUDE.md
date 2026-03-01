@@ -9,21 +9,26 @@ fund-tools is a CLI-based fund portfolio management system (基金持仓管理�
 ## Development Commands
 
 ```bash
-# Activate virtual environment
-source venv/bin/activate
+# Run CLI (via bash script)
+bash scripts/fund-cli.sh --help
+bash scripts/fund-cli.sh <command> [options]
 
-# Run CLI
-python main.py --help
-python main.py <command> [options]
+# Or use installed command directly
+source tools/venv/bin/activate
+fund-tools --help
 
 # Common commands
-python main.py init                    # Initialize environment (mcporter + qieman-mcp)
-python main.py import-csv data/sample.csv  # Import holdings from CSV
-python main.py holdings                # View holdings list
-python main.py overview                # Show portfolio overview
-python main.py sync --all              # Sync fund data from MCP service
-python main.py stats                   # Show all statistics
-python main.py detail 004137           # View specific fund detail
+bash scripts/fund-cli.sh init                    # Initialize environment (mcporter + qieman-mcp)
+bash scripts/fund-cli.sh import-csv tools/data/sample.csv  # Import holdings from CSV
+bash scripts/fund-cli.sh holdings                # View holdings list
+bash scripts/fund-cli.sh overview                # Show portfolio overview
+bash scripts/fund-cli.sh sync --all              # Sync fund data from MCP service
+bash scripts/fund-cli.sh stats                   # Show all statistics
+bash scripts/fund-cli.sh detail 004137           # View specific fund detail
+
+# Install/Update package
+source tools/venv/bin/activate
+pip install -e tools/
 ```
 
 ## Development Workflow
@@ -70,14 +75,25 @@ docs: 更新README安装说明
 ## Architecture
 
 ```
-main.py                 # CLI entry point (Click-based), all command definitions
-src/
-├── models.py           # Data models: FundHolding, FundInfo, FundHoldingsDetail, StockHolding, BondHolding
-├── database.py         # SQLite operations, all CRUD methods, schema initialization
-├── csv_importer.py     # CSV parsing and validation, Chinese column name mapping
-├── mcp_service.py      # MCP integration via mcporter CLI, batch API calls
-├── statistics.py       # Rich-based terminal output, reporting
-└── env_checker.py      # Environment validation, mcporter/qieman-mcp setup
+fund-tools/
+├── SKILL.md              # AgentSkills skill 定义
+├── scripts/              # Skill 调用脚本
+│   └── fund-cli.sh      # CLI 包装脚本 (bash)
+├── references/           # 参考文档
+├── assets/               # 静态资源
+└── tools/                # Python 包 (可安装)
+    ├── pyproject.toml   # 包配置
+    ├── requirements.txt # 依赖列表
+    ├── venv/            # 虚拟环境
+    ├── data/            # 数据文件
+    └── src/             # 源代码
+        ├── cli.py       # CLI 入口 (Click-based)
+        ├── models.py    # Data models
+        ├── database.py  # SQLite operations
+        ├── csv_importer.py   # CSV parsing
+        ├── mcp_service.py    # MCP integration
+        ├── statistics.py     # Rich-based output
+        └── env_checker.py    # Environment validation
 ```
 
 ## Key Design Decisions
