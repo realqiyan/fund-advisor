@@ -26,33 +26,37 @@ pip install -r requirements.txt
 
 ## 环境准备
 
-本工具依赖 [mcporter](https://github.com/anthropics/mcporter) 和且慢(qieman) MCP 服务来实现基金数据同步。
+本工具依赖 [mcporter](https://github.com/steipete/mcporter) 和且慢(qieman) MCP 服务来实现基金数据同步。
 
 ### 1. 安装 mcporter
 
-mcporter 是一个 MCP (Model Context Protocol) 服务管理工具，用于调用远程 MCP 服务。
+mcporter 是一个 MCP (Model Context Protocol) 客户端工具，用于连接和调用远程 MCP 服务。
 
-```bash
-# 使用 Go 安装（推荐）
-go install github.com/anthropics/mcporter/cmd/mcporter@latest
 
-# 或从 GitHub Releases 下载预编译二进制
-# https://github.com/anthropics/mcporter/releases
-
-# 验证安装
-mcporter --version
+Run instantly with npx
 ```
-
-安装完成后，mcporter 会在 `~/.mcporter/` 目录下创建配置文件。
+npx mcporter list
+```
+Add to your project
+```
+pnpm add mcporter
+```
+Homebrew (steipete/tap)
+```
+brew tap steipete/tap
+brew install steipete/tap/mcporter
+```
 
 ### 2. 配置且慢 MCP 服务
 
-且慢(qieman)是一个基金投资平台，提供了 MCP 服务接口来获取基金数据。
+[且慢](https://qieman.com) 是一个基金投资平台，提供了 MCP 服务接口来获取基金数据。且慢 MCP 提供基金、内容、投研、投顾等专业领域的数据能力。
+
+详细文档请参考：[且慢 MCP 使用文档](https://yingmi.feishu.cn/docx/PRPRds5SBo2MITxHJL2cMPminEf)
 
 #### 2.1 获取 API Key
 
-1. 访问且慢开放平台，注册并获取 API Key
-2. 或通过且慢 Stargate 服务获取访问凭证
+1. 访问 [且慢 MCP API Key 申请页面](https://qieman.com/mcp/account)
+2. 登录且慢账户，申请获取 API Key
 
 #### 2.2 配置 mcporter
 
