@@ -26,6 +26,47 @@ python main.py stats                   # Show all statistics
 python main.py detail 004137           # View specific fund detail
 ```
 
+## Development Workflow
+
+### Git Workflow
+
+```bash
+# Check status
+git status
+
+# Stage and commit changes
+git add .
+git commit -m "type: description"
+
+# Push to GitHub
+git push
+```
+
+### Commit Message Convention
+
+Follow conventional commits format:
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation changes
+- `refactor:` - Code refactoring
+- `test:` - Adding tests
+- `chore:` - Maintenance tasks
+
+Example:
+```
+feat: 添加投资类型分布统计功能
+fix: 修复CSV导入列名换行符问题
+docs: 更新README安装说明
+```
+
+### Code Style
+
+- Use Python 3.10+ features
+- Follow PEP 8 naming conventions
+- Use dataclasses for data models
+- Use Click for CLI commands
+- Use Rich for terminal output
+
 ## Architecture
 
 ```
