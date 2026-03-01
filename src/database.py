@@ -197,6 +197,16 @@ class Database:
             conn.commit()
             return cursor.rowcount > 0
 
+    def clear_all_holdings(self) -> int:
+        """清空所有持仓记录，返回删除的数量"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) as count FROM fund_holdings")
+            count = cursor.fetchone()['count']
+            cursor.execute("DELETE FROM fund_holdings")
+            conn.commit()
+            return count
+
     def _row_to_fund_holding(self, row: sqlite3.Row) -> FundHolding:
         """将数据库行转换为FundHolding对象"""
         return FundHolding(

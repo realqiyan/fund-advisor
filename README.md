@@ -26,17 +26,99 @@ pip install -r requirements.txt
 
 ## 环境准备
 
-本工具依赖 [mcporter](https://github.com/anthropics/mcporter) 和 qieman-mcp 服务。
+本工具依赖 [mcporter](https://github.com/anthropics/mcporter) 和且慢(qieman) MCP 服务来实现基金数据同步。
+
+### 1. 安装 mcporter
+
+mcporter 是一个 MCP (Model Context Protocol) 服务管理工具，用于调用远程 MCP 服务。
 
 ```bash
-# 初始化环境（检查并配置 mcporter 和 qieman-mcp）
-python main.py init
+# 使用 Go 安装（推荐）
+go install github.com/anthropics/mcporter/cmd/mcporter@latest
 
-# 仅检查环境状态
-python main.py init --check
+# 或从 GitHub Releases 下载预编译二进制
+# https://github.com/anthropics/mcporter/releases
+
+# 验证安装
+mcporter --version
 ```
 
-> **注意**：qieman-mcp 的 API Key 需要自行申请并配置到 `~/.mcporter/mcporter.json`。
+安装完成后，mcporter 会在 `~/.mcporter/` 目录下创建配置文件。
+
+### 2. 配置且慢 MCP 服务
+
+且慢(qieman)是一个基金投资平台，提供了 MCP 服务接口来获取基金数据。
+
+#### 2.1 获取 API Key
+
+1. 访问且慢开放平台，注册并获取 API Key
+2. 或通过且慢 Stargate 服务获取访问凭证
+
+#### 2.2 配置 mcporter
+
+编辑 `~/.mcporter/mcporter.json` 文件，添加 qieman-mcp 服务配置：
+
+```json
+{
+  "mcpServers": {
+    "qieman-mcp": {
+      "baseUrl": "https://stargate.yingmi.com/mcp/sse?apiKey=YOUR_API_KEY_HERE",
+      "description": "基金投资工具包，提供基金、内容、投研、投顾等专业领域能力。"
+    }
+  }
+}
+```
+
+> **重要**：将 `YOUR_API_KEY_HERE` 替换为你从且慢获取的实际 API Key。
+
+#### 2.3 验证配置
+
+```bash
+# 测试 MCP 服务连接
+mcporter call qieman-mcp.BatchGetFundsDetail \
+  --args '{"fundCodes": ["000001"]}' \
+  --output json
+```
+
+如果返回基金数据，说明配置成功。
+
+### 3. 使用 fund-tools 初始化
+
+```bash
+# 自动检查并配置环境
+python main.py init
+
+# 仅检查环境状态（不做修改）
+python main.py init --check
+
+# 强制重新配置
+python main.py init --force
+```
+
+初始化命令会：
+1. 检查 mcporter 是否已安装
+2. 检查 mcporter 配置文件是否存在
+3. 检查 qieman-mcp 是否已配置
+4. 测试 MCP 服务连接
+
+> **注意**：如果 API Key 未配置，需要手动编辑 `~/.mcporter/mcporter.json` 添加正确的 API Key。
+
+### 4. 同步基金数据
+
+环境配置完成后，可以同步基金数据：
+
+```bash
+# 同步基金基础信息（投资类型、风险等级、基金经理等）
+python main.py sync --info
+
+# 同步基金持仓详情（重仓股、重仓债等）
+python main.py sync --detail
+
+# 同步所有信息
+python main.py sync --all
+```
+
+同步的数据会存储在本地 SQLite 数据库中，供统计分析使用。
 
 ## 使用方法
 
@@ -51,6 +133,11 @@ CSV 文件需要包含以下列（支持中文列名）：
 - 基金代码、基金名称、基金账户、交易账户
 - 持有份额、份额日期、基金净值、净值日期
 - 资产情况（结算币种）、结算币种、分红方式
+
+```bash
+# 清空所有持仓记录（需要确认）
+python main.py reset
+```
 
 ### 持仓查看
 
