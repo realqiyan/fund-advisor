@@ -397,129 +397,19 @@ class Database:
             data_update_time=datetime.fromisoformat(row['data_update_time']) if row['data_update_time'] else None
         )
 
-    # ==================== 统计查询 ====================
-
-    def get_statistics(self) -> Dict[str, Any]:
-        """获取统计数据"""
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-
-            # 总资产
-            cursor.execute("""
-                SELECT COALESCE(SUM(asset_value), 0) as total
-                FROM fund_holdings
-            """)
-            total_asset = cursor.fetchone()['total']
-
-            # 基金数量
-            cursor.execute("""
-                SELECT COUNT(DISTINCT fund_code) as count FROM fund_holdings
-            """)
-            fund_count = cursor.fetchone()['count']
-
-            # 持仓记录数
-            cursor.execute("""
-                SELECT COUNT(*) as count FROM fund_holdings
-            """)
-            holding_count = cursor.fetchone()['count']
-
-            # 基金管理人分布
-            cursor.execute("""
-                SELECT fund_manager, COUNT(*) as count, SUM(asset_value) as total
-                FROM fund_holdings
-                GROUP BY fund_manager
-                ORDER BY total DESC
-            """)
-            manager_distribution = {
-                row['fund_manager']: {'count': row['count'], 'total': row['total']}
-                for row in cursor.fetchall()
-            }
-
-            # 销售机构分布
-            cursor.execute("""
-                SELECT sales_agency, COUNT(*) as count, SUM(asset_value) as total
-                FROM fund_holdings
-                GROUP BY sales_agency
-                ORDER BY total DESC
-            """)
-            sales_agency_distribution = {
-                row['sales_agency']: {'count': row['count'], 'total': row['total']}
-                for row in cursor.fetchall()
-            }
-
-            # 获取已有基础信息的基金代码
-            cursor.execute("""
-                SELECT COUNT(*) as count FROM fund_info
-            """)
-            info_count = cursor.fetchone()['count']
-
-            # 获取已有持仓详情的基金代码
-            cursor.execute("""
-                SELECT COUNT(*) as count FROM fund_holdings_detail
-            """)
-            detail_count = cursor.fetchone()['count']
-
-            # 投资类型分布（从fund_info表获取）
-            cursor.execute("""
-                SELECT
-                    COALESCE(i.fund_invest_type, '未知') as invest_type,
-                    COUNT(*) as count,
-                    SUM(h.asset_value) as total
-                FROM fund_holdings h
-                LEFT JOIN fund_info i ON h.fund_code = i.fund_code
-                GROUP BY i.fund_invest_type
-                ORDER BY total DESC
-            """)
-            invest_type_distribution = {
-                row['invest_type']: {'count': row['count'], 'total': row['total']}
-                for row in cursor.fetchall()
-            }
-
-            return {
-                'total_asset_value': total_asset,
-                'fund_count': fund_count,
-                'holding_count': holding_count,
-                'manager_distribution': manager_distribution,
-                'sales_agency_distribution': sales_agency_distribution,
-                'invest_type_distribution': invest_type_distribution,
-                'info_count': info_count,
-                'detail_count': detail_count
-            }
-
-    def get_fund_codes_from_holdings(self) -> List[str]:
-        """获取所有持仓中的基金代码"""
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT DISTINCT fund_code FROM fund_holdings ORDER BY fund_code
-            """)
-            return [row['fund_code'] for row in cursor.fetchall()]
-
-    def get_missing_fund_info_codes(self) -> List[str]:
-        """获取没有基础信息的基金代码"""
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT DISTINCT h.fund_code
-                FROM fund_holdings h
-                LEFT JOIN fund_info i ON h.fund_code = i.fund_code
-                WHERE i.fund_code IS NULL
-            """)
-            return [row['fund_code'] for row in cursor.fetchall()]
-
-    def get_missing_fund_detail_codes(self) -> List[str]:
-        """获取没有持仓详情的基金代码"""
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT DISTINCT h.fund_code
-                FROM fund_holdings h
-                LEFT JOIN fund_holdings_detail d ON h.fund_code = d.fund_code
-                WHERE d.fund_code IS NULL
-            """)
-            return [row['fund_code'] for row in cursor.fetchall()]
-
     # ==================== 通用分组统计和查询 ====================
+
+    # 列名映射：GroupColumn 枚举值 -> 数据库列名
+    _COLUMN_MAPPING = {
+        'fund_code': 'fund_code',
+        'fund_name': 'fund_name',
+        'fund_manager': 'fund_manager',
+        'fund_account': 'fund_account',
+        'trade_account': 'trade_account',
+        'sales_agency': 'sales_agency',
+        'currency': 'settlement_currency',
+        'dividend_method': 'dividend_method',
+    }
 
     def get_group_statistics(self, column: str) -> List[Dict[str, Any]]:
         """按指定列分组统计
@@ -530,17 +420,6 @@ class Database:
         Returns:
             分组统计结果列表，每项包含 name, count, total 字段
         """
-        column_mapping = {
-            'fund_code': 'fund_code',
-            'fund_name': 'fund_name',
-            'fund_manager': 'fund_manager',
-            'fund_account': 'fund_account',
-            'trade_account': 'trade_account',
-            'sales_agency': 'sales_agency',
-            'currency': 'settlement_currency',
-            'dividend_method': 'dividend_method',
-        }
-
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
@@ -557,7 +436,7 @@ class Database:
                     ORDER BY total DESC
                 """)
             else:
-                db_column = column_mapping.get(column, column)
+                db_column = self._COLUMN_MAPPING.get(column, column)
                 cursor.execute(f"""
                     SELECT
                         COALESCE({db_column}, '未知') as name,
@@ -580,17 +459,6 @@ class Database:
         Returns:
             匹配的持仓列表
         """
-        column_mapping = {
-            'fund_code': 'fund_code',
-            'fund_name': 'fund_name',
-            'fund_manager': 'fund_manager',
-            'fund_account': 'fund_account',
-            'trade_account': 'trade_account',
-            'sales_agency': 'sales_agency',
-            'currency': 'settlement_currency',
-            'dividend_method': 'dividend_method',
-        }
-
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
@@ -604,7 +472,7 @@ class Database:
                     ORDER BY h.asset_value DESC
                 """, (f'%{value}%',))
             else:
-                db_column = column_mapping.get(column, column)
+                db_column = self._COLUMN_MAPPING.get(column, column)
                 cursor.execute(f"""
                     SELECT * FROM fund_holdings
                     WHERE {db_column} LIKE ?

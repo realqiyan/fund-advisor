@@ -1,13 +1,13 @@
 """
 基金持仓管理系统 - 统计视图功能
 """
-from typing import Dict, List, Any
+from typing import Any
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 
 from src.database import Database
-from src.models import FundHolding, FundInfo, FundHoldingsDetail, GroupColumn
+from src.models import FundHolding, GroupColumn
 
 
 class Statistics:
@@ -218,28 +218,3 @@ class Statistics:
                     )
 
                 self.console.print(bond_table)
-
-    def show_all_stats(self):
-        """显示所有统计视图"""
-        stats = self.database.get_statistics()
-
-        # 总览面板
-        total_asset = stats['total_asset_value']
-        fund_count = stats['fund_count']
-        holding_count = stats['holding_count']
-
-        overview_text = f"""
-[bold cyan]总资产价值:[/] ¥{total_asset:,.2f}
-[bold cyan]持仓基金数:[/] {fund_count} 只
-[bold cyan]持仓记录数:[/] {holding_count} 条
-[bold cyan]基金基础信息:[/] {stats['info_count']} 条
-[bold cyan]基金持仓详情:[/] {stats['detail_count']} 条
-"""
-        self.console.print("\n" + "=" * 60 + "\n")
-        self.console.print(Panel(overview_text, title="[bold green]投资组合总览[/]", border_style="green"))
-        self.console.print()
-
-        # 遍历所有分组列展示统计
-        for column in GroupColumn:
-            self.console.print()
-            self.show_group_statistics(column)

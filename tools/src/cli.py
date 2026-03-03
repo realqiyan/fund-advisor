@@ -3,7 +3,6 @@
 基金持仓管理系统 - CLI主程序
 """
 import sys
-from typing import Optional
 
 import click
 from rich.console import Console
