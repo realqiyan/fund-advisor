@@ -11,11 +11,10 @@ fund-tools/
 ├── SKILL.md              # Skill定义（AgentSkills协议）
 ├── CLAUDE.md             # Claude Code 项目指令
 ├── scripts/              # Skill调用脚本
-│   ├── fund-cli.py       # CLI包装脚本
-│   └── query_mcp.py      # MCP直查脚本
+│   └─── fund-cli.py      # CLI包装脚本
 ├── references/           # 参考文档
 │   ├── REFERENCE.md      # 本文档
-│   ├── mcp-tools.md      # MCP工具文档
+│   ├── mcp-tools-full.md # MCP工具文档
 │   └── csv-format.md     # CSV格式规范
 ├── assets/               # 静态资源
 └── tools/                # 工程代码
@@ -28,8 +27,7 @@ fund-tools/
     │   ├── statistics.py     # 统计分析
     │   └── env_checker.py    # 环境检查
     ├── tests/            # 测试
-    ├── data/             # 数据文件
-    └── fund_portfolio.db # SQLite数据库
+    └── data/             # 数据文件
 ```
 
 ## 数据模型

@@ -1,6 +1,6 @@
 ---
 name: fund-advisor
-description: 基金投资顾问技能。提供所有平台基金持仓统一管理功能，支持导入和查询；提供基金基础数据、持仓明细、持仓穿透等基于数据查询；提供投资组合分析、投资规划、组合回测服务；提供财经资讯、热点新闻、财经新闻查询；提供基金搜索、公告查询等服务。当用户咨询基金投资、基金相关信息查询、财经相关信息查询、持仓分析等基金投资相关问题时激活此技能。
+description: 基金投资顾问技能。提供个人基金持仓统一管理功能，支持所有平台持仓导入、分析、查询；提供基金基础数据、持仓明细、持仓穿透等基于数据查询；提供投资组合分析、投资规划、组合回测服务；提供财经资讯、热点新闻、财经新闻查询；提供基金搜索、公告查询等服务。当用户咨询技能已经覆盖的问题时，优先激活此技能。
 homepage: https://github.com/realqiyan/fund-advisor
 metadata: {"clawdbot":{"emoji":"💰","requires":{"bins":["bash","mcporter","python","pip"],"env":["QIEMAN_API_KEY","FUND_ADVISOR_DATA_PATH"]}}}
 compatibility: 需要 mcporter CLI 和 qieman-mcp MCP 服务配置
@@ -9,7 +9,7 @@ allowed-tools: Bash(mcporter:*) Bash(python:*) Bash(bash*) Read(*.csv) Read(*.md
 
 # 基金顾投 Skill (fund-advisor)
 
-基金投资顾问技能。提供个人持仓管理功能，并整合盈米且慢MCP服务，提供基金数据查询、投资组合分析、市场分析等服务。
+提供个人基金持仓统一管理功能，支持所有平台持仓导入、分析、查询；提供基金基础数据、持仓明细、持仓穿透等基于数据查询；提供投资组合分析、投资规划、组合回测服务；提供财经资讯、热点新闻、财经新闻查询；提供基金搜索、公告查询等服务。
 
 ‼️重要：你所有的分析过程和结论必须基于用户导入的持仓数据和qieman-mcp服务器工具获取最新的实时数据。
 
@@ -17,12 +17,13 @@ allowed-tools: Bash(mcporter:*) Bash(python:*) Bash(bash*) Read(*.csv) Read(*.md
 
 ## 能力范围
 
-1. 管理用户的基金持仓数据，用户导入数据时会创建数据库文件存储用户导入的数据，后续进行持仓数据分析。数据目录可通过 `FUND_ADVISOR_DATA_PATH` 环境变量配置，默认为 `$HOME/.fund-advisor`，数据库文件名为 `fund_portfolio_v1.db`。
+1. 管理用户的基金持仓数据，用户可以通过基金E账户导出所有持仓数据（包括：支付宝、京东金融、腾讯理财、雪球基金、且慢等所有平台的场外基金持仓数据），导入数据时会创建数据库文件存储用户导入的数据，后续可以配合qieman-mcp的数据查询能力进行持仓数据的综合分析。数据目录可通过 `FUND_ADVISOR_DATA_PATH` 环境变量配置，默认为 `$HOME/.fund-advisor`，数据库文件名为 `fund_portfolio_v1.db`。
 
-2. 本技能整合且慢MCP（qieman-mcp）的五大核心能力模块：
+2. 本技能整合qieman-mcp的五大核心能力模块：
 
 | 模块 | 能力说明 |
 |------|----------|
+
 | 金融数据 | 基金基础信息、净值历史、持仓明细、风险指标、业绩表现等 |
 | 投研服务 | 基金筛选、基金诊断、回测分析、相关性分析、风险评估等 |
 | 投顾服务 | 资产配置方案、投资规划、风险匹配、财务分析等 |
@@ -37,6 +38,8 @@ allowed-tools: Bash(mcporter:*) Bash(python:*) Bash(bash*) Read(*.csv) Read(*.md
 
 导入用户的持仓数据，后续进行数据分析使用。
 
+数据获取和导入方法：通过基金E账户导出Excel，转换成csv文件后发生给你的Agent。
+
 ```bash
 # 初始化环境（检查 mcporter 和 qieman-mcp 配置）
 bash scripts/fund-cli.sh init
@@ -46,22 +49,17 @@ bash scripts/fund-cli.sh import-csv tools/data/holdings.csv
 
 # 同步所有数据到本地（基础信息 + 持仓详情）
 bash scripts/fund-cli.sh sync --all
-
-# 仅同步基金基础信息数据到本地
-bash scripts/fund-cli.sh sync --info
-
-# 仅同步基金持仓详情数据到本地
-bash scripts/fund-cli.sh sync --detail
 ```
 
 ### 2. 持仓分析
 
 ```bash
 # 按列分组统计
+bash scripts/fund-cli.sh group -c invest_type      # 按投资类型分组
+bash scripts/fund-cli.sh group -c fund_account     # 按基金账户分组
+bash scripts/fund-cli.sh group -c trade_account    # 按交易账户分组
 bash scripts/fund-cli.sh group -c fund_manager     # 按基金管理人分组
 bash scripts/fund-cli.sh group -c sales_agency     # 按销售机构分组
-bash scripts/fund-cli.sh group -c invest_type      # 按投资类型分组
-bash scripts/fund-cli.sh group -c currency         # 按结算币种分组
 
 # 按条件查询持仓明细
 bash scripts/fund-cli.sh query -c fund_manager -v "易方达"   # 查询易方达管理的基金
@@ -72,15 +70,11 @@ bash scripts/fund-cli.sh query -c fund_name -v "红利"        # 查询名称包
 bash scripts/fund-cli.sh detail 004137
 ```
 
-
 ### 3. 基金投资咨询
 
 直接通过 MCP 服务查询任意基金信息，无需本地数据库：
 
 ```bash
-# 查询单只基金详情
-mcporter call qieman-mcp.BatchGetFundsDetail --args '{"fundCodes":["004137"]}' --output json
-
 # 批量查询多只基金
 mcporter call qieman-mcp.BatchGetFundsDetail --args '{"fundCodes":["004137","000001","110022"]}' --output json
 
@@ -88,30 +82,7 @@ mcporter call qieman-mcp.BatchGetFundsDetail --args '{"fundCodes":["004137","000
 mcporter call qieman-mcp.BatchGetFundsHolding --args '{"fundCodes":["004137"]}' --output json
 ```
 
-## MCP 工具整合
-
-通过 `mcporter` CLI 调用 `qieman-mcp` 服务：
-
-### BatchGetFundsDetail
-
-批量获取基金详细信息，包括：
-- 基金名称、代码、类型
-- 净值、净值日期
-- 基金规模、成立日期
-- 基金经理、风险等级
-- 资产配置比例（股票/债券/现金）
-- 收益率指标
-
-### BatchGetFundsHolding
-
-批量获取基金持仓详情，包括：
-- 报告日期
-- 股票投资比例
-- 债券投资比例
-- 十大重仓股
-- 十大重仓债
-
-详细参数和返回格式见 [references/mcp-tools.md](references/mcp-tools.md)
+详细工具参考文档 [references/mcp-tools-full.md](references/mcp-tools-full.md)
 
 ## 数据模型
 
@@ -133,33 +104,27 @@ mcporter call qieman-mcp.BatchGetFundsHolding --args '{"fundCodes":["004137"]}' 
 用户："帮我查一下易方达蓝筹精选的信息"
 
 执行：
+
 ```bash
 mcporter call qieman-mcp.BatchGetFundsDetail --args '{"fundCodes":["005827"]}' --output json
 ```
 
-### 示例2：分析用户持仓
-
-用户："分析一下我的基金持仓"
-
-执行：
-```bash
-bash scripts/fund-cli.sh stats
-```
-
-### 示例3：导入新持仓
+### 示例2：导入新持仓
 
 用户："我有个CSV文件要导入"
 
 执行：
+
 ```bash
 bash scripts/fund-cli.sh import-csv /path/to/holdings.csv
 ```
 
-### 示例4：同步最新数据
+### 示例3：同步最新数据
 
 用户："更新一下基金数据"
 
 执行：
+
 ```bash
 bash scripts/fund-cli.sh sync --all
 ```
@@ -251,21 +216,10 @@ mcporter call qieman-mcp.SearchHotTopic \
 mcporter call qieman-mcp.SearchManagerViewpoint \
   --args '{"industry":"科技","limit":5}' \
   --output json
-```
 
-## 报告生成
-
-支持生成可视化报告：
-
-```bash
-# ECharts图表渲染
-mcporter call qieman-mcp.RenderEchart \
-  --args '{"option":{...}}' \
-  --output json
-
-# HTML转PDF
-mcporter call qieman-mcp.RenderHtmlToPdf \
-  --args '{"html":"..."}' \
+# 4. 搜索财经资讯
+mcporter call qieman-mcp.SearchFinancialNews \
+  --args '{"keyword":"降息","startDate":"2025-01-01","limit":10}' \
   --output json
 ```
 
@@ -312,6 +266,7 @@ bash scripts/fund-cli.sh init
 ```
 
 初始化脚本会：
+
 1. 检查 mcporter 是否已安装
 2. 检查 `QIEMAN_API_KEY` 环境变量是否已配置
 3. 自动生成 `~/.mcporter/mcporter.json` 配置文件
@@ -320,6 +275,5 @@ bash scripts/fund-cli.sh init
 ## 参考文档
 
 - [MCP工具完整清单](references/mcp-tools-full.md)
-- [MCP工具基础文档](references/mcp-tools.md)
 - [CSV导入格式规范](references/csv-format.md)
 - [项目架构说明](references/REFERENCE.md)
