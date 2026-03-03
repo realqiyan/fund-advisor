@@ -10,7 +10,7 @@ from contextlib import contextmanager
 
 from src.models import (
     FundHolding, FundInfo, FundHoldingsDetail,
-    StockHolding, BondHolding, FundType
+    StockHolding, BondHolding, FundType, GroupColumn
 )
 from src.config import get_db_path
 
@@ -518,3 +518,97 @@ class Database:
                 WHERE d.fund_code IS NULL
             """)
             return [row['fund_code'] for row in cursor.fetchall()]
+
+    # ==================== 通用分组统计和查询 ====================
+
+    def get_group_statistics(self, column: str) -> List[Dict[str, Any]]:
+        """按指定列分组统计
+
+        Args:
+            column: 分组列名（使用 GroupColumn 枚举值）
+
+        Returns:
+            分组统计结果列表，每项包含 name, count, total 字段
+        """
+        column_mapping = {
+            'fund_code': 'fund_code',
+            'fund_name': 'fund_name',
+            'fund_manager': 'fund_manager',
+            'fund_account': 'fund_account',
+            'trade_account': 'trade_account',
+            'sales_agency': 'sales_agency',
+            'currency': 'settlement_currency',
+            'dividend_method': 'dividend_method',
+        }
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            # 投资类型需要 JOIN fund_info 表
+            if column == 'invest_type':
+                cursor.execute("""
+                    SELECT
+                        COALESCE(i.fund_invest_type, '未知') as name,
+                        COUNT(*) as count,
+                        SUM(h.asset_value) as total
+                    FROM fund_holdings h
+                    LEFT JOIN fund_info i ON h.fund_code = i.fund_code
+                    GROUP BY i.fund_invest_type
+                    ORDER BY total DESC
+                """)
+            else:
+                db_column = column_mapping.get(column, column)
+                cursor.execute(f"""
+                    SELECT
+                        COALESCE({db_column}, '未知') as name,
+                        COUNT(*) as count,
+                        SUM(asset_value) as total
+                    FROM fund_holdings
+                    GROUP BY {db_column}
+                    ORDER BY total DESC
+                """)
+
+            return [dict(row) for row in cursor.fetchall()]
+
+    def query_holdings(self, column: str, value: str) -> List[FundHolding]:
+        """按指定列和值查询持仓
+
+        Args:
+            column: 查询列名（使用 GroupColumn 枚举值）
+            value: 查询值（使用模糊匹配）
+
+        Returns:
+            匹配的持仓列表
+        """
+        column_mapping = {
+            'fund_code': 'fund_code',
+            'fund_name': 'fund_name',
+            'fund_manager': 'fund_manager',
+            'fund_account': 'fund_account',
+            'trade_account': 'trade_account',
+            'sales_agency': 'sales_agency',
+            'currency': 'settlement_currency',
+            'dividend_method': 'dividend_method',
+        }
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            # 投资类型需要 JOIN fund_info 表
+            if column == 'invest_type':
+                cursor.execute("""
+                    SELECT h.*
+                    FROM fund_holdings h
+                    LEFT JOIN fund_info i ON h.fund_code = i.fund_code
+                    WHERE i.fund_invest_type LIKE ?
+                    ORDER BY h.asset_value DESC
+                """, (f'%{value}%',))
+            else:
+                db_column = column_mapping.get(column, column)
+                cursor.execute(f"""
+                    SELECT * FROM fund_holdings
+                    WHERE {db_column} LIKE ?
+                    ORDER BY asset_value DESC
+                """, (f'%{value}%',))
+
+            return [self._row_to_fund_holding(row) for row in cursor.fetchall()]

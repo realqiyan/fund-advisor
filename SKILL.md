@@ -1,6 +1,6 @@
 ---
 name: fund-advisor
-description: 基金投资顾问技能。提供个人持仓管理功能，并整合盈米且慢MCP服务，提供基金数据查询、投资组合分析、市场分析等服务。当用户询问基金投资、基金信息查询、财经信息查询、持仓分析等基金投资相关问题时激活此技能。
+description: 基金投资顾问技能。提供所有平台基金持仓统一管理功能，支持导入和查询；提供基金基础数据、持仓明细、持仓穿透等基于数据查询；提供投资组合分析、投资规划、组合回测服务；提供财经资讯、热点新闻、财经新闻查询；提供基金搜索、公告查询等服务。当用户咨询基金投资、基金相关信息查询、财经相关信息查询、持仓分析等基金投资相关问题时激活此技能。
 homepage: https://github.com/realqiyan/fund-advisor
 metadata: {"clawdbot":{"emoji":"💰","requires":{"bins":["bash","mcporter","python","pip"],"env":["QIEMAN_API_KEY","FUND_ADVISOR_DATA_PATH"]}}}
 compatibility: 需要 mcporter CLI 和 qieman-mcp MCP 服务配置
@@ -10,7 +10,9 @@ allowed-tools: Bash(mcporter:*) Bash(python:*) Bash(bash*) Read(*.csv) Read(*.md
 # 基金顾投 Skill (fund-advisor)
 
 基金投资顾问技能。提供个人持仓管理功能，并整合盈米且慢MCP服务，提供基金数据查询、投资组合分析、市场分析等服务。
+
 ‼️重要：你所有的分析过程和结论必须基于用户导入的持仓数据和qieman-mcp服务器工具获取最新的实时数据。
+
 ‼️重要：你引用的其他来源数据可能会给用户带来投资风险，请一定要使用可靠的、准确的、即时的数据，不要提供任何主观的数据和分析结论。
 
 ## 能力范围
@@ -39,12 +41,6 @@ allowed-tools: Bash(mcporter:*) Bash(python:*) Bash(bash*) Read(*.csv) Read(*.md
 # 初始化环境（检查 mcporter 和 qieman-mcp 配置）
 bash scripts/fund-cli.sh init
 
-# 查看持仓列表
-bash scripts/fund-cli.sh holdings
-
-# 查看投资组合总览
-bash scripts/fund-cli.sh overview
-
 # 导入 CSV 持仓文件，导入的数据会保存到本地数据库
 bash scripts/fund-cli.sh import-csv tools/data/holdings.csv
 
@@ -61,20 +57,22 @@ bash scripts/fund-cli.sh sync --detail
 ### 2. 持仓分析
 
 ```bash
-# 查看基金详情
-bash scripts/fund-cli.sh detail 004137
-
-# 查看管理人分布
-bash scripts/fund-cli.sh managers
-
-# 查看销售机构分布
-bash scripts/fund-cli.sh agencies
-
-# 显示所有统计
+# 显示所有统计（总览 + 各维度分布）
 bash scripts/fund-cli.sh stats
 
-# 导出统计报告
-bash scripts/fund-cli.sh export --output report.txt
+# 按列分组统计
+bash scripts/fund-cli.sh group -c fund_manager     # 按基金管理人分组
+bash scripts/fund-cli.sh group -c sales_agency     # 按销售机构分组
+bash scripts/fund-cli.sh group -c invest_type      # 按投资类型分组
+bash scripts/fund-cli.sh group -c currency         # 按结算币种分组
+
+# 按条件查询持仓明细
+bash scripts/fund-cli.sh query -c fund_manager -v "易方达"   # 查询易方达管理的基金
+bash scripts/fund-cli.sh query -c invest_type -v "股票型"    # 查询股票型基金
+bash scripts/fund-cli.sh query -c fund_name -v "红利"        # 查询名称包含红利的基金
+
+# 查看基金详情
+bash scripts/fund-cli.sh detail 004137
 ```
 
 
@@ -148,7 +146,6 @@ mcporter call qieman-mcp.BatchGetFundsDetail --args '{"fundCodes":["005827"]}' -
 
 执行：
 ```bash
-bash scripts/fund-cli.sh overview
 bash scripts/fund-cli.sh stats
 ```
 

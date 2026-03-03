@@ -7,7 +7,7 @@ from typing import Optional
 
 import click
 from rich.console import Console
-from rich.prompt import Prompt, Confirm
+from rich.prompt import Confirm
 
 from .database import Database
 from .csv_importer import CSVImporter
@@ -15,9 +15,14 @@ from .mcp_service import MCPService
 from .statistics import Statistics
 from .env_checker import EnvChecker
 from .config import get_db_path
+from .models import GroupColumn
 
 
 console = Console()
+
+
+# 分组列名选项
+COLUMN_CHOICES = [col.value for col in GroupColumn]
 
 
 @click.group()
@@ -96,16 +101,6 @@ def reset(ctx):
 # ==================== 持仓管理命令 ====================
 
 @cli.command()
-@click.option("--account", help="按基金账户筛选")
-@click.pass_context
-def holdings(ctx, account):
-    """查看持仓列表"""
-    database = ctx.obj["database"]
-    stats = Statistics(database)
-    stats.show_holdings_list(account)
-
-
-@cli.command()
 @click.argument("fund_code")
 @click.pass_context
 def detail(ctx, fund_code):
@@ -115,42 +110,39 @@ def detail(ctx, fund_code):
     stats.show_fund_detail(fund_code)
 
 
-@cli.command()
-@click.pass_context
-def overview(ctx):
-    """显示投资组合总览"""
-    database = ctx.obj["database"]
-    stats = Statistics(database)
-    stats.show_overview()
-
+# ==================== 分组统计和查询命令 ====================
 
 @cli.command()
-@click.option("--limit", default=10, help="显示数量")
+@click.option("-c", "--column", required=True, type=click.Choice(COLUMN_CHOICES),
+              help="分组列名")
 @click.pass_context
-def managers(ctx, limit):
-    """显示基金管理人分布"""
+def group(ctx, column):
+    """按指定列分组统计
+
+    支持的列名: fund_code, fund_name, fund_manager, fund_account,
+                trade_account, sales_agency, invest_type, currency, dividend_method
+    """
     database = ctx.obj["database"]
     stats = Statistics(database)
-    stats.show_manager_distribution(limit)
-
-
-@cli.command()
-@click.option("--limit", default=10, help="显示数量")
-@click.pass_context
-def agencies(ctx, limit):
-    """显示销售机构分布"""
-    database = ctx.obj["database"]
-    stats = Statistics(database)
-    stats.show_sales_agency_distribution(limit)
+    group_column = GroupColumn(column)
+    stats.show_group_statistics(group_column)
 
 
 @cli.command()
+@click.option("-c", "--column", required=True, type=click.Choice(COLUMN_CHOICES),
+              help="查询列名")
+@click.option("-v", "--value", required=True, help="查询值（支持模糊匹配）")
 @click.pass_context
-def invest_type(ctx):
-    """显示投资类型分布"""
+def query(ctx, column, value):
+    """按条件查询持仓明细
+
+    支持的列名: fund_code, fund_name, fund_manager, fund_account,
+                trade_account, sales_agency, invest_type, currency, dividend_method
+    """
     database = ctx.obj["database"]
     stats = Statistics(database)
-    stats.show_invest_type_distribution()
+    group_column = GroupColumn(column)
+    stats.show_query_result(group_column, value)
 
 
 # ==================== 数据同步命令 ====================
@@ -210,7 +202,7 @@ def sync(ctx, info, detail, sync_all, batch_size):
         console.print("[yellow]请指定同步类型: --info, --detail, 或 --all[/]")
 
 
-# ==================== 统计和导出命令 ====================
+# ==================== 统计命令 ====================
 
 @cli.command()
 @click.pass_context
@@ -219,13 +211,3 @@ def stats(ctx):
     database = ctx.obj["database"]
     stats = Statistics(database)
     stats.show_all_stats()
-
-
-@cli.command()
-@click.option("--output", default="report.txt", help="输出文件路径")
-@click.pass_context
-def export(ctx, output):
-    """导出统计报告"""
-    database = ctx.obj["database"]
-    stats = Statistics(database)
-    stats.export_report(output)

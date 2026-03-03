@@ -15,6 +15,35 @@ class FundType(Enum):
     CLOSED_END = "closed_end"  # 封闭式基金
 
 
+class GroupColumn(Enum):
+    """分组统计列名"""
+    FUND_CODE = "fund_code"           # 基金代码
+    FUND_NAME = "fund_name"           # 基金名称
+    FUND_MANAGER = "fund_manager"     # 基金管理人
+    FUND_ACCOUNT = "fund_account"     # 基金账户
+    TRADE_ACCOUNT = "trade_account"   # 交易账户
+    SALES_AGENCY = "sales_agency"     # 销售机构
+    INVEST_TYPE = "invest_type"       # 投资类型
+    CURRENCY = "currency"             # 结算币种
+    DIVIDEND_METHOD = "dividend_method"  # 分红方式
+
+    @classmethod
+    def get_display_name(cls, column: 'GroupColumn') -> str:
+        """获取列的中文显示名称"""
+        names = {
+            cls.FUND_CODE: "基金代码",
+            cls.FUND_NAME: "基金名称",
+            cls.FUND_MANAGER: "基金管理人",
+            cls.FUND_ACCOUNT: "基金账户",
+            cls.TRADE_ACCOUNT: "交易账户",
+            cls.SALES_AGENCY: "销售机构",
+            cls.INVEST_TYPE: "投资类型",
+            cls.CURRENCY: "结算币种",
+            cls.DIVIDEND_METHOD: "分红方式",
+        }
+        return names.get(column, column.value)
+
+
 @dataclass
 class FundHolding:
     """公募基金持有信息"""
