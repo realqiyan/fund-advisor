@@ -57,9 +57,6 @@ bash scripts/fund-cli.sh sync --detail
 ### 2. 持仓分析
 
 ```bash
-# 显示所有统计（总览 + 各维度分布）
-bash scripts/fund-cli.sh stats
-
 # 按列分组统计
 bash scripts/fund-cli.sh group -c fund_manager     # 按基金管理人分组
 bash scripts/fund-cli.sh group -c sales_agency     # 按销售机构分组

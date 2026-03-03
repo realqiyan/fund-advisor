@@ -200,14 +200,3 @@ def sync(ctx, info, detail, sync_all, batch_size):
 
     if not info and not detail and not sync_all:
         console.print("[yellow]请指定同步类型: --info, --detail, 或 --all[/]")
-
-
-# ==================== 统计命令 ====================
-
-@cli.command()
-@click.pass_context
-def stats(ctx):
-    """显示所有统计视图"""
-    database = ctx.obj["database"]
-    stats = Statistics(database)
-    stats.show_all_stats()
