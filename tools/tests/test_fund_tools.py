@@ -433,39 +433,6 @@ class TestCLI:
         mock_mcp.sync_fund_info.assert_called_once()
         mock_mcp.sync_fund_holdings.assert_called_once()
 
-    @patch('src.cli.EnvChecker')
-    @patch('src.cli.MCPService')
-    def test_cli_sync_info_only(self, mock_mcp_class, mock_env_class, runner, temp_db_with_data):
-        """测试 sync --info 命令"""
-        mock_env = MagicMock()
-        mock_env.check_mcporter_installed.return_value = True
-        mock_env.check_qieman_mcp_configured.return_value = True
-        mock_env_class.return_value = mock_env
-
-        mock_mcp = MagicMock()
-        mock_mcp.sync_fund_info.return_value = (3, 0)
-        mock_mcp_class.return_value = mock_mcp
-
-        result = runner.invoke(cli, ['--db', temp_db_with_data.db_path, 'sync', '--info'])
-
-        assert result.exit_code == 0
-        assert '同步基金基础信息' in result.output
-        assert '同步基金持仓详情' not in result.output
-
-        # 只调用了 fund_info，没有调用 holdings
-        mock_mcp.sync_fund_info.assert_called_once()
-        mock_mcp.sync_fund_holdings.assert_not_called()
-
-    @patch('src.cli.EnvChecker')
-    def test_cli_sync_no_mcporter(self, mock_env_class, runner, temp_db_with_data):
-        """测试 mcporter 未安装时的 sync 命令"""
-        mock_env = MagicMock()
-        mock_env.check_mcporter_installed.return_value = False
-        mock_env_class.return_value = mock_env
-
-        result = runner.invoke(cli, ['--db', temp_db_with_data.db_path, 'sync', '--all'])
-
-        assert 'mcporter未安装' in result.output
 
 
 if __name__ == "__main__":

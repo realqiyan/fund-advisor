@@ -2,6 +2,9 @@
 click>=8.1.0
 rich>=13.0.0
 
+# Testing
+pytest>=7.0.0
+
 # Data handling
 # pandas>=2.0.0  # 可选，如果需要更复杂的数据分析
 
